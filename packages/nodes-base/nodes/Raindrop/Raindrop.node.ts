@@ -165,12 +165,31 @@ export class Raindrop implements INodeType {
 
 						const collectionId = this.getNodeParameter('collectionId', i);
 						const endpoint = `/raindrops/${collectionId}`;
-						responseData = await raindropApiRequest.call(this, 'GET', endpoint, {}, {});
-						responseData = responseData.items;
 
-						if (!returnAll) {
+						if (returnAll) {
+							let page = 0;
+							const perpage = 50; // max supported by raindrop
+							let pageResult: any = [];
+							responseData = [];
+							do {
+								pageResult = (
+									await raindropApiRequest.call(this, 'GET', endpoint, { perpage, page }, {})
+								).items;
+
+								responseData.push(...pageResult);
+
+								page++;
+							} while (pageResult.length === perpage);
+						} else {
 							const limit = this.getNodeParameter('limit', 0);
-							responseData = responseData.slice(0, limit);
+							responseData = await raindropApiRequest.call(
+								this,
+								'GET',
+								endpoint,
+								{ perpage: limit },
+								{},
+							);
+							responseData = responseData.items;
 						}
 					} else if (operation === 'update') {
 						// ----------------------------------
